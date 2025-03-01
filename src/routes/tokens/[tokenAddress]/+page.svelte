@@ -2,33 +2,32 @@
 	import { page } from '$app/stores';
 	import Header from '$lib/Header.svelte';
 	import { balance } from '$lib/stores/userBalance';
-	import { wagmiConfig, connected } from '$lib/stores/wagmi';
+	import { wagmiConfig, connected, signerAddress } from '$lib/stores/wagmi';
 	import { readContract } from '@wagmi/core';
-	import {onMount} from 'svelte';
+	import { onMount } from 'svelte';
 
 	import FactoryABI from '$lib/abi/Factory.json';
 
 	async function getTokenData(fundingId) {
-  try {
-    const fundingInfo = await readContract($wagmiConfig, {
-		abi: FactoryABI,
-		address: '0x439E743a832a1952d563A1eFB531da39566E358c',
-      functionName: 'fundings',
-      args: [fundingId],
-    });
-    console.log('Funding Info:', fundingInfo);
-    return fundingInfo;
-  } catch (error) {
-    console.error('Error fetching funding info:', error);
-  }
-}
-	
-$: if($connected) {
-	getTokenData(Number($page.params.tokenAddress)).then(data => {
-		console.log(data);
-		;
-	});
-}
+		try {
+			const fundingInfo = await readContract($wagmiConfig, {
+				abi: FactoryABI,
+				address: '0x439E743a832a1952d563A1eFB531da39566E358c',
+				functionName: 'fundings',
+				args: [fundingId]
+			});
+			console.log('Funding Info:', fundingInfo);
+			return fundingInfo;
+		} catch (error) {
+			console.error('Error fetching funding info:', error);
+		}
+	}
+
+	$: if ($connected) {
+		getTokenData(Number($page.params.tokenAddress)).then((data) => {
+			console.log(data);
+		});
+	}
 
 	//0x96c33CE8A28F76f24B83b156828A65Ccd0452CE7
 
@@ -44,7 +43,22 @@ $: if($connected) {
 	function placeTrade() {
 		alert(`Trading ${tradeAmount} ETH for ${tokenSymbol}`);
 	}
-	// Obtener el tokenAddress desde los parámetros de la ruta
+
+	async function claimAirdrop() {
+		try {
+			const user = $signerAddress;
+			const response = await fetch(`/airdrop/sign?address=${user}&token=${contractAddress}`);
+			const data = await response.json();
+			console.log(data);
+			if (data.signature) {
+				//await reclamarAirdrop(data.signature);
+			} else {
+				console.error('No se recibió una firma válida del servidor.');
+			}
+		} catch (error) {
+			console.error('Error al obtener la firma del servidor:', error);
+		}
+	}
 </script>
 
 <Header />
@@ -134,7 +148,10 @@ $: if($connected) {
 		<!-- Token Info -->
 		<div class="rounded-lg bg-gray-800 p-4">
 			<div class="flex items-center gap-4">
-				<img src="https://imagecdn.app/v1/images/https%3A%2F%2Fcataas.com%2Fcat?width=100&amp;height=100" class="h-12 w-12 rounded-full" />
+				<img
+					src="https://imagecdn.app/v1/images/https%3A%2F%2Fcataas.com%2Fcat?width=100&amp;height=100"
+					class="h-12 w-12 rounded-full"
+				/>
 				<div>
 					<h3 class="text-lg font-bold">[{tokenSymbol}] {tokenName}</h3>
 					<p class="text-gray-400">Market Cap: {marketCap}</p>
@@ -148,8 +165,7 @@ $: if($connected) {
 				<button class="w-full rounded bg-gray-700 py-2 text-gray-300">Claim vesting</button>
 			</div>
 			<div class="mt-4">
-
-				<button  data-modal-target="default-modal" data-modal-toggle="default-modal" class="w-full rounded bg-gray-700 py-2 text-gray-300">Airdrop</button>
+				<button on:click={claimAirdrop} class="w-full rounded bg-gray-700 py-2 text-gray-300">Airdrop</button>
 			</div>
 			<div class="mt-2 text-sm text-gray-500">
 				<p>Contract Address: <span class="text-gray-300">{contractAddress}</span></p>
@@ -157,41 +173,3 @@ $: if($connected) {
 		</div>
 	</div>
 </div>
-
-
-
-  
-  <!-- Main modal -->
-  <div id="default-modal" tabindex="-1" aria-hidden="true" class=" overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-	  <div class="relative p-4 w-full max-w-2xl max-h-full">
-		  <!-- Modal content -->
-		  <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
-			  <!-- Modal header -->
-			  <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
-				  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-					  Terms of Service
-				  </h3>
-				  <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="default-modal">
-					  <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-						  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-					  </svg>
-					  <span class="sr-only">Close modal</span>
-				  </button>
-			  </div>
-			  <!-- Modal body -->
-			  <div class="p-4 md:p-5 space-y-4">
-				  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-					  With less than a month to go before the European Union enacts new consumer privacy laws for its citizens, companies around the world are updating their terms of service agreements to comply.
-				  </p>
-				  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-					  The European Union’s General Data Protection Regulation (G.D.P.R.) goes into effect on May 25 and is meant to ensure a common set of data rights in the European Union. It requires organizations to notify users as soon as possible of high-risk data breaches that could personally affect them.
-				  </p>
-			  </div>
-			  <!-- Modal footer -->
-			  <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-				  <button data-modal-hide="default-modal" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">I accept</button>
-				  <button data-modal-hide="default-modal" type="button" class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Decline</button>
-			  </div>
-		  </div>
-	  </div>
-  </div>

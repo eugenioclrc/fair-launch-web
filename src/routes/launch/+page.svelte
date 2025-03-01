@@ -35,7 +35,6 @@
 			functionName: 'createFunding',
 			args: [name, symbol, '100000000000000000000', '2500000000000000000']
 		});
-		
 
 		console.log(tx);
 
