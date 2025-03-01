@@ -3,8 +3,7 @@
 	import Header from '$lib/Header.svelte';
 	import { balance } from '$lib/stores/userBalance';
 	import { wagmiConfig, connected, signerAddress } from '$lib/stores/wagmi';
-	import { readContract } from '@wagmi/core';
-	import { onMount } from 'svelte';
+	import { readContract, writeContract } from '@wagmi/core';
 
 	import FactoryABI from '$lib/abi/Factory.json';
 
@@ -12,7 +11,7 @@
 		try {
 			const fundingInfo = await readContract($wagmiConfig, {
 				abi: FactoryABI,
-				address: '0x439E743a832a1952d563A1eFB531da39566E358c',
+				address: '0x6e3c325735b524d4189e337d232bc0dc45d660e5',
 				functionName: 'fundings',
 				args: [fundingId]
 			});
@@ -47,13 +46,31 @@
 	async function claimAirdrop() {
 		try {
 			const user = $signerAddress;
-			const response = await fetch(`/airdrop/sign?address=${user}&token=${contractAddress}`);
+			const token = '0x8f9895491b38b6b9b21d18d21998ce55dc933988';
+
+			const response = await fetch(`/airdrop/sign?address=${user}&token=${token}`);
 			const data = await response.json();
 			console.log(data);
 			if (data.signature) {
-				//await reclamarAirdrop(data.signature);
+				await writeContract($wagmiConfig, {
+					abi: [
+						{
+							name: 'claimAirdrop',
+							type: 'function',
+							stateMutability: 'nonpayable',
+							inputs: [
+								{ name: 'token', type: 'address' },
+								{ name: 'signature', type: 'bytes' }
+							],
+							outputs: []
+						}
+					],
+					address: '0xbCdB8269E80fc67dc6F605F5BE85895801CCd1ad',
+					functionName: 'claimAirdrop',
+					args: [token, data.signature]
+				});
 			} else {
-				console.error('No se recibió una firma válida del servidor.');
+				console.error('cant get signature');
 			}
 		} catch (error) {
 			console.error('Error al obtener la firma del servidor:', error);
@@ -165,7 +182,9 @@
 				<button class="w-full rounded bg-gray-700 py-2 text-gray-300">Claim vesting</button>
 			</div>
 			<div class="mt-4">
-				<button on:click={claimAirdrop} class="w-full rounded bg-gray-700 py-2 text-gray-300">Airdrop</button>
+				<button on:click={claimAirdrop} class="w-full rounded bg-gray-700 py-2 text-gray-300"
+					>Airdrop</button
+				>
 			</div>
 			<div class="mt-2 text-sm text-gray-500">
 				<p>Contract Address: <span class="text-gray-300">{contractAddress}</span></p>

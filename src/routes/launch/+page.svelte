@@ -31,7 +31,7 @@
 
 		const tx = await writeContract($wagmiConfig, {
 			abi: FactoryABI,
-			address: '0x439E743a832a1952d563A1eFB531da39566E358c',
+			address: '0x6e3c325735b524d4189e337d232bc0dc45d660e5',
 			functionName: 'createFunding',
 			args: [name, symbol, '100000000000000000000', '2500000000000000000']
 		});
